@@ -1,3 +1,4 @@
 # Thrivi_Flyrank
-Flyrank Repo for my flyrank AI- ML internship.
-The notebooks contain tasks assigned to me and that I have completed them
+Built an ML pipeline notebook for machine learning intrnship using flyrankAI's data warehouse, covering the full data-validation and feature-engineering process before modeling.
+Verified the data's grain and availability with targeted queries before building five features, each justified by whether it was actually knowable at decision time.
+Deliberately introduced a label-derived feature to demonstrate data leakage — watched the score jump toward perfect, then removed it and kept the honest result
