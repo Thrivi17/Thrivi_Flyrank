@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlyRank Engine Capstone Paper</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            line-height: 1.6; 
+            max-width: 850px; 
+            margin: 40px auto; 
+            padding: 0 20px; 
+            color: #24292e; 
+        }
+        h1, h2, h3, h4 { 
+            color: #111; 
+            border-bottom: 1px solid #eaecef; 
+            padding-bottom: 0.3em; 
+            margin-top: 1.5em;
+        }
+        code { 
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace; 
+            background-color: #f6f8fa; 
+            padding: 0.2em 0.4em; 
+            border-radius: 3px;
+            font-size: 85%; 
+        }
+        pre { 
+            background-color: #1e1e1e; 
+            color: #d4d4d4; 
+            padding: 16px; 
+            border-radius: 6px; 
+            overflow-x: auto; 
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 85%; 
+            line-height: 1.45; 
+        }
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+        }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #dfe2e5; padding: 8px 12px; text-align: left; }
+        th { background-color: #f6f8fa; font-weight: 600; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        .meta-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0366d6;
+            padding: 12px 16px;
+            margin-bottom: 24px;
+        }
+        .meta-info p { margin: 4px 0; }
+    </style>
+</head>
+<body>
+
+    <h1>FlyRank Engine: CTR & Engagement Opportunity Scoring via Predictive Machine Learning</h1>
+    
+    <div class="meta-info">
+        <p><strong>Author:</strong> T. Madhavan</p>
+        <p><strong>Track:</strong> Machine Learning & Search Engine Optimization</p>
+        <p><strong>Lane:</strong> CTR / Engagement Opportunity Scoring</p>
+        <p><strong>Data Partition:</strong> March 2026 Daily Performance Warehouse</p>
+    </div>
+
+    <h2>Abstract</h2>
+    <p>This report covers the creation of a fully end-to-end machine learning pipeline for the FlyRank system, tasked with the automation of identification, reporting, and prioritization of under-indexed content items. By using DuckDB to stream partitioned archives from Hugging Face, search impressions and click data were aggregated for the month of March 2026. The dataset contained 331,438 unique records, for which the pipeline identified high-visibility search assets that under-captured on SERP click volume.</p>
+    <p>Early approaches to build the ML pipeline suffered from high target leakage (ROC-AUC 1.00) by including impressions directly in the features. Focusing only on non-leaked features, including average search rank and rank volatility, resulted in a strong Random Forest Classifier producing an ROC-AUC of 0.8539—significantly better than the heuristic baseline of ROC-AUC 0.5532. Final processing ranked and scored every dataset element, producing a top-100 opportunity CSV report.</p>
+
+    <h2>1. Introduction & Objective</h2>
+    <h3>1.1 Objective Alignment</h3>
+    <p>This report corresponds to the CTR / Engagement Opportunity Scoring objective within the FlyRank platform. Typically, high performing content on search engine results pages (SERPs) but with below average CTR is a candidate for re-optimization. Since search engines already rank and thus index these items, minimal effort—a change in metadata, for instance—is more efficient than a complete new content build.</p>
+
+    <h3>1.2 System Scope</h3>
+    <p>The end-to-end ML pipeline automates this discovery by including:</p>
+    <ul>
+        <li>Streaming search impression and click data from the cloud (Hugging Face).</li>
+        <li>Feature selection and feature engineering to define the target variable.</li>
+        <li>Mitigation of target leakage.</li>
+        <li>Final model scoring and ranking to export actionable insights into a content playbook.</li>
+    </ul>
+
+    <h2>2. Dataset Architecture & SQL Data Streaming</h2>
+    <h3>2.1 Dataset Specifications</h3>
+    <p>The pipeline queries search logs from Hugging Face, stored in Parquet format partitioned at the month level.</p>
+    <ul>
+        <li><strong>Storage Path:</strong> <code>hf://datasets/FlyRank/internship-warehouse/fact_content_daily_performance/month=2026-03/*.parquet</code></li>
+        <li><strong>Data Volume:</strong> 331,438 unique content entries were analyzed after aggregation for the month of March 2026.</li>
+    </ul>
+
+    <h3>2.2 SQL Aggregation & Target Engineering</h3>
+    <p>To enable in-memory operations using DuckDB on data from cloud storage, the Hugging Face dataset was accessed by querying compressed Parquet Archives directly. DuckDB was used to join, group, and aggregate impression and click data into content-level features, avoiding Out-Of-Memory issues:</p>
+    <pre><code>SELECT 
+    content_hash_id, 
+    AVG(gsc_impressions) AS avg_impressions,
+    AVG(gsc_clicks) AS avg_clicks,
+    AVG(gsc_clicks) / NULLIF(AVG(gsc_impressions), 0) AS avg_ctr,
+    AVG(gsc_avg_position) AS avg_position,
+    STDDEV(gsc_avg_position) AS position_volatility,
+    CASE 
+        WHEN AVG(gsc_clicks) / NULLIF(AVG(gsc_impressions), 0) < 0.02 
+             AND AVG(gsc_impressions) > 500 THEN 1 
+        ELSE 0 
+    END AS is_opportunity
+FROM read_parquet('hf://datasets/FlyRank/internship-warehouse/fact_content_daily_performance/month=2026-03/*.parquet')
+GROUP BY content_hash_id
+HAVING AVG(gsc_impressions) IS NOT NULL;</code></pre>
+
+    <h2>3. Methodology & Target Leakage Prevention</h2>
+    <h3>3.1 Target Formulation</h3>
+    <p>A content item is considered a high-opportunity candidate (<code>is_opportunity = 1</code>) if its average daily impressions exceed 500 and its average Click-Through Rate (CTR) falls below 2.0% (0.02).</p>
+
+    <h3>3.2 Target Leakage Resolution</h3>
+    <p>In initial modeling attempts, the <code>avg_impressions</code> metric was included directly as a feature in the training data. This caused complete target leakage, as the model could trivially learn the exact threshold (>500) used to define the target variable. To prevent this leakage, <code>avg_impressions</code> was excluded from the training feature set. The final feature matrix was comprised solely of non-leaking ranking metrics:</p>
+    <p style="text-align: center; font-style: italic;">X = [avg_position, position_volatility]</p>
+
+    <h3>3.3 Experimental Setup</h3>
+    <p>The dataset (N = 331,438) was split into an 80% training set (265,150 records) and a 20% validation set (66,288 records) using stratified sampling, preserving the original target class distribution (approximately 0.95% positive class).</p>
+
+    <h2>4. Validation Results & Discussion</h2>
+    <h3>4.1 Quantitative Performance Comparison</h3>
+    <p>A Random Forest Classifier was trained with 100 estimators and compared against a rule-based heuristic (<code>avg_position > 20</code>).</p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Model Architecture</th>
+                <th>Features Used</th>
+                <th>Validation ROC-AUC</th>
+                <th>Precision (Class 1)</th>
+                <th>Recall (Class 1)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Heuristic Baseline</strong> (<code>avg_position > 20</code>)</td>
+                <td><code>avg_position</code></td>
+                <td><strong>0.5532</strong></td>
+                <td>—</td>
+                <td>—</td>
+            </tr>
+            <tr>
+                <td><strong>Random Forest Classifier</strong> (N=100)</td>
+                <td><code>avg_position</code>, <code>position_volatility</code></td>
+                <td><strong>0.8539</strong></td>
+                <td><strong>0.34</strong></td>
+                <td><strong>0.10</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p>The Random Forest achieved an ROC-AUC of 0.8539, a significant improvement of +54.3% compared to the rule-based heuristic (ROC-AUC 0.5532).</p>
+
+    <h3>4.2 Feature Importance Analysis</h3>
+    <p>Gini impurity reduction indicates that rank stability (<code>position_volatility</code>) is negligibly more predictive than average search position (<code>avg_position</code>):</p>
+    <pre><code>position_volatility : 0.536458 (53.65%)
+avg_position        : 0.463542 (46.35%)</code></pre>
+
+    <h2>5. Results & Action Playbook</h2>
+    <p>A continuous <code>opportunity_score</code> (ranging from 0.0 to 1.0) was generated by model prediction to rank content assets by intervention priority.</p>
+
+    <h3>Top 5 Prioritized Content Opportunities</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Content Hash ID</th>
+                <th>Avg Impressions</th>
+                <th>Avg Clicks</th>
+                <th>Avg CTR</th>
+                <th>Avg Position</th>
+                <th>Volatility</th>
+                <th>Opportunity Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>1</strong></td><td><code>content_768e297b350f1bc2</code></td><td>807.00</td><td>5.74</td><td>0.71%</td><td>2.96</td><td>0.327</td><td><strong>1.00</strong></td></tr>
+            <tr><td><strong>2</strong></td><td><code>content_bafd0eaf1ca2e8b9</code></td><td>578.42</td><td>0.13</td><td>0.02%</td><td>28.63</td><td>1.859</td><td><strong>1.00</strong></td></tr>
+            <tr><td><strong>3</strong></td><td><code>content_cf5973f693f12bb3</code></td><td>914.06</td><td>0.35</td><td>0.04%</td><td>34.75</td><td>1.956</td><td><strong>1.00</strong></td></tr>
+            <tr><td><strong>4</strong></td><td><code>content_12aad21f7eb34ddb</code></td><td>634.90</td><td>0.45</td><td>0.07%</td><td>29.93</td><td>2.037</td><td><strong>1.00</strong></td></tr>
+            <tr><td><strong>5</strong></td><td><code>content_cf9e5d7d47670c3b</code></td><td>1081.77</td><td>4.94</td><td>0.46%</td><td>3.05</td><td>0.317</td><td><strong>0.98</strong></td></tr>
+        </tbody>
+    </table>
+
+    <h3>Tactical Execution Recommendations</h3>
+    <ul>
+        <li><strong>Page-1 High Visibility Assets (Ranks 1 & 5):</strong> Pages like <code>content_768e297b350f1bc2</code> are ranking in the top 3 positions (position ≈ 2.96) with over 800 daily impressions but below 0.71% CTR. <strong>Action:</strong> Optimize titles and descriptions for snippet performance.</li>
+        <li><strong>Stable High-Impression Striking Assets (Ranks 2–4):</strong> Assets ranking on Pages 3–4 (position ≈ 28–35) generate substantial, consistent impressions. <strong>Action:</strong> Reinforce on-page relevance and build internal links to achieve Page 1 ranking.</li>
+    </ul>
+
+    <h2>6. Conclusion & Future Work</h2>
+    <p>The FlyRank pipeline effectively leverages distributed engineering (DuckDB) and machine learning to streamline SEO operations. By avoiding target leakage and incorporating ranking volatility, the system provides robust predictions exported to <code>top_ranked_opportunities.csv</code>.</p>
+
+    <h3>Future Improvements</h3>
+    <ul>
+        <li><strong>Addressing Class Imbalance:</strong> Utilize SMOTE oversampling or adjust probability thresholds to improve Class 1 recall beyond 0.10.</li>
+        <li><strong>Multi-Month Trend Analysis:</strong> Expand SQL aggregation to encompass more data partitions (e.g., all Q1 2026) to capture multi-month trend features for ranking velocity.</li>
+    </ul>
+
+    <h2>Appendix A: Complete Python Pipeline Source Code</h2>
+    <pre><code>import duckdb
+      
+hf_token = "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" #Defining string variable holding the hugging face token
+
+# Connect to DuckDB & authenticate
+con = duckdb.connect()
+
+#running a sql command instead DuckDB to register Hugging Face credential
+con.execute(f"""
+CREATE SECRET hf_token (
+    TYPE HUGGINGFACE,
+    TOKEN '{hf_token}'
+);
+""")
+
+print("DuckDB initialized and authenticated successfully!") #Printing out if successful
+
+# Filtering for month 2026-03 to stay under Colab memory limit
+query = """
+SELECT 
+    content_hash_id, 
+    AVG(gsc_impressions) AS avg_impressions,
+    AVG(gsc_clicks) AS avg_clicks,
+    AVG(gsc_clicks) / NULLIF(AVG(gsc_impressions), 0) AS avg_ctr,
+    AVG(gsc_avg_position) AS avg_position,
+    STDDEV(gsc_avg_position) AS position_volatility,
+    -- Define opportunity target label (e.g., high impressions but low CTR)
+    CASE 
+        WHEN AVG(gsc_clicks) / NULLIF(AVG(gsc_impressions), 0) < 0.02 
+             AND AVG(gsc_impressions) > 500 THEN 1 
+        ELSE 0 
+    END AS is_opportunity
+FROM read_parquet('hf://datasets/FlyRank/internship-warehouse/fact_content_daily_performance/month=2026-03/*.parquet')
+GROUP BY content_hash_id
+HAVING AVG(gsc_impressions) IS NOT NULL;
+"""
+
+print("Building dataset")
+df = con.sql(query).df() #Executing SQL string through DuckDB
+print(f"Dataset shape: {df.shape}") # Printing out result
+df.head()
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, roc_auc_score
+
+df['position_volatility'] = df['position_volatility'].fillna(0) #For pages that only logged impression data on a single day in March
+
+# Defining the feature matrix (X). Also elimnates target leakage
+X = df[['avg_position', 'position_volatility']]
+y = df['is_opportunity'] #Defines the target vector (y) containing the 0/1 ground truth opportunity clasification
+
+#Splits data into training (80%) And Validation (20%) Sets
+X_train, X_val, y_train, y_val = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+model = RandomForestClassifier(n_estimators=100, random_state=42) #Instantiates a Random Forest model with 100 individual trees
+model.fit(X_train, y_train) #Training model by learning decision boundaries
+
+y_proba = model.predict_proba(X_val)[:, 1] #Generates predicted probability score for (1) on the validation set
+y_pred = model.predict(X_val) #Generates binary class predictions using default probability thresholds
+
+print("Validation Results") #Title
+ #Evaluates ranking performance across probability thresholds to 4 decimal places. Prints the ROC-Auc score to 4 decimal places
+print("ROC-AUC Score:", round(roc_auc_score(y_val, y_proba), 4))
+print("\nClassification Report: \n", classification_report(y_val, y_pred)) #Prints precision, recall and F1-score breakdown
+
+#Baseline Rule: Predicting opportunity (1) if average position is worse than rank 20
+
+baseline_preds = (X_val['avg_position'] > 20).astype(int) #Creates a heuristic baseline comparison if the avg_position was higher than 20
+
+print("Baseline Comparison")
+# Evaluating and printing baseline ROC-AUC score based on the baseline rule
+print("Heuristic Baseline ROC-AUC Score:", round(roc_auc_score(y_val, baseline_preds), 4))
+#Prints the trained model's ROC-AUC Score alongside the baseline score to aid direct comparison
+print("Random Forest ML ROC-AUC Score: ", round(roc_auc_score(y_val, y_proba), 4))
+
+import pandas as pd
+
+#Calculating and ranking the relative importance of each feature in the forest
+feature_importance = pd.Series(model.feature_importances_, index=X.columns).sort_values(ascending=False)
+
+print("Feature Importance")
+print(feature_importance) #Displaying sorted feature importances to show which variable had the most impact on predictions
+
+# Calculating opportunity probability scores across the entire dataset. Stores in new column
+df['opportunity_score'] = model.predict_proba(X)[:, 1]
+
+# Sorts all probabilities in desscending order and selecting top 100 items
+top_opportunities = df.sort_values(by='opportunity_score', ascending=False).head(100)
+#Exporting the top 100 items into a csv file
+top_opportunities.to_csv('top_ranked_opportunities.csv', index=False)
+
+print("Successfully exported top 100 opportunities to 'top_ranked_opportunities.csv'!")
+
+</body>
+</html>
