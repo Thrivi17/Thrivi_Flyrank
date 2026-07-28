@@ -47,6 +47,7 @@
         table { width: 100%; border-collapse: collapse; margin: 20px 0; }
         th, td { border: 1px solid #dfe2e5; padding: 8px 12px; text-align: left; }
         th { background-color: #f6f8fa; font-weight: 600; }
+        td.num, th.num { text-align: right; }
         tr:nth-child(even) { background-color: #f8f9fa; }
         .meta-info {
             background-color: #f8f9fa;
@@ -70,7 +71,7 @@
         <p><strong>Author:</strong> Thrivikraman Madhavan</p>
         <p><strong>Lane:</strong> CTR / Engagement Opportunity Scoring</p>
         <p><strong>Track:</strong> Machine Learning & Search Engine Optimization</p>
-        <p><strong>Research Question:</strong> Of our highest search volume page or query entities, which entities on these pages/queries perform far less better at our property when clicking than one might predict given the average search position for this entity and at what ordered level of priority would they most benefit from an intervention?</p>
+        <p><strong>Research Question:</strong> "Of our highest search volume page or query entities, which entities on these pages/queries perform far less better at our property when clicking than one might predict given the average search position for this entity and at what ordered level of priority would they most benefit from an intervention?"</p>
         <p><strong>Date:</strong> July 28, 2026</p>
     </div>
 
@@ -83,7 +84,7 @@
     <blockquote>
         <em>"Of our highest search volume page or query entities, which entities on these pages/queries perform far less better at our property when clicking than one might predict given the average search position position for this entity and at what ordered level of priority would they most be benefit from a intervention?"</em>
     </blockquote>
-    <p>Our search position v click through rate (CTR) distribution clearly demonstrates a precipitous rate of decrease: As shown above after our rank #1 position average 6.67% CTR, after only rank #2 that number significantly drops to 2.38%, after Rank # 5 this drops to 0.44%, and continues to spiral downwards until the furthest out on the page #10 which is a flat 0.31%. A pearson co relation test however showed zero correlation with CTR (-0.0726), implying that a simple linear model does not apply for estimating CTR for a given position number.</p>
+    <p>Our search position v click through rate (CTR) distribution clearly demonstrates a precipitous rate of decrease: As shown above after our rank #1 position average 6.67% CTR, after only rank #2 that number significantly drops to 2.38%, after Rank # 5 this drops to 0.44%, and continues to spiral downwards until the furthest out on the page #10 which is a flat 0.31%. A statistical evaluation showed negligible linear correlation with CTR ($r = -0.0726$), implying that a simple linear model does not apply for estimating CTR for a given position number.</p>
 
     <!-- 3. DATA -->
     <h2>Data</h2>
@@ -112,21 +113,61 @@
     <table>
         <thead>
             <tr>
-                <th>Action Rank</th>
-                <th>GSC Impressions</th>
-                <th>Avg Position</th>
-                <th>Clicks</th>
+                <th class="num">Action Rank</th>
+                <th class="num">GSC Impressions</th>
+                <th class="num">Avg Position</th>
+                <th class="num">Clicks</th>
                 <th>Reason Code</th>
                 <th>Content Archetype</th>
                 <th>Operational Workflow</th>
             </tr>
         </thead>
         <tbody>
-            <tr><td><strong>1</strong></td><td>38,436</td><td>2.20</td><td>271</td><td><code>TOP_TIER_OPTIMIZE</code></td><td>Transactional Landing</td><td>Immediate metadata refresh and keyword density check</td></tr>
-            <tr><td><strong>2</strong></td><td>35,404</td><td>2.19</td><td>225</td><td><code>TOP_TIER_OPTIMIZE</code></td><td>News/Trend Tracker</td><td>Automated brief generation followed by rapid human sign-off</td></tr>
-            <tr><td><strong>3</strong></td><td>33,383</td><td>0.18</td><td>0</td><td><code>TOP_TIER_OPTIMIZE</code></td><td>Informational Pillar</td><td>Deep structural expansion and internal link reinforcement</td></tr>
-            <tr><td><strong>4</strong></td><td>24,577</td><td>10.79</td><td>66</td><td><code>COMPLIANCE_FLAG</code></td><td>Transactional Landing</td><td>Immediate metadata refresh and keyword density check</td></tr>
-            <tr><td><strong>5</strong></td><td>24,335</td><td>2.38</td><td>46</td><td><code>TOP_TIER_OPTIMIZE</code></td><td>Transactional Landing</td><td>Immediate metadata refresh and keyword density check</td></tr>
+            <tr>
+                <td class="num"><strong>1</strong></td>
+                <td class="num">38,436</td>
+                <td class="num">2.20</td>
+                <td class="num">271</td>
+                <td><code>TOP_TIER_OPTIMIZE</code></td>
+                <td>Transactional Landing</td>
+                <td>Immediate metadata refresh and keyword density check</td>
+            </tr>
+            <tr>
+                <td class="num"><strong>2</strong></td>
+                <td class="num">35,404</td>
+                <td class="num">2.19</td>
+                <td class="num">225</td>
+                <td><code>TOP_TIER_OPTIMIZE</code></td>
+                <td>News/Trend Tracker</td>
+                <td>Automated brief generation followed by rapid human sign-off</td>
+            </tr>
+            <tr>
+                <td class="num"><strong>3</strong></td>
+                <td class="num">33,383</td>
+                <td class="num">1.18</td>
+                <td class="num">0</td>
+                <td><code>TOP_TIER_OPTIMIZE</code></td>
+                <td>Informational Pillar</td>
+                <td>Deep structural expansion and internal link reinforcement</td>
+            </tr>
+            <tr>
+                <td class="num"><strong>4</strong></td>
+                <td class="num">24,577</td>
+                <td class="num">10.79</td>
+                <td class="num">66</td>
+                <td><code>COMPLIANCE_FLAG</code></td>
+                <td>Transactional Landing</td>
+                <td>Immediate metadata refresh and keyword density check</td>
+            </tr>
+            <tr>
+                <td class="num"><strong>5</strong></td>
+                <td class="num">24,335</td>
+                <td class="num">2.38</td>
+                <td class="num">46</td>
+                <td><code>TOP_TIER_OPTIMIZE</code></td>
+                <td>Transactional Landing</td>
+                <td>Immediate metadata refresh and keyword density check</td>
+            </tr>
         </tbody>
     </table>
 
