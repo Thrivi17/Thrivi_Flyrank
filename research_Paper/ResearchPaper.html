@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Predicting Organic Opportunity Score with CTR & Engagement Rate through a Machine Learning Approach</title>
+    <title>A Machine Learning Approach to Predict Opportunity Score based on CTR & Engagement Rate for Organic Search Optimization</title>
     <!-- MathJax for rendering LaTeX formulas cleanly -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -64,47 +64,51 @@
 <body>
 
     <!-- 1. TITLE & ABSTRACT -->
-    <h1>Predicting Organic Opportunity Score with CTR & Engagement Rate through a Machine Learning Approach</h1>
+    <h1>A Machine Learning Approach to Predict Opportunity Score based on CTR & Engagement Rate for Organic Search Optimization</h1>
     
     <div class="meta-info">
         <p><strong>Author:</strong> Thrivikraman Madhavan</p>
-        <p><strong>Lane & Track:</strong> Machine Learning & Search Engine Optimization</p>
+        <p><strong>Lane:</strong> CTR / Engagement Opportunity Scoring</p>
+        <p><strong>Track:</strong> Machine Learning & Search Engine Optimization</p>
         <p><strong>Research Question:</strong> "Of our highest search volume page or query entities, which entities on these pages/queries perform far less better at our property when clicking than one might predict given the average search position for this entity and at what ordered level of priority would they most benefit from an intervention?"</p>
         <p><strong>Date:</strong> July 28, 2026</p>
     </div>
 
     <h2>Abstract</h2>
-    <p>To overcome at-scale resolution of organic search inefficiency, we automate programmatic identification of an ‘underserved class’ of digital assets by training a machine learning model on high-traffic web pages with poor click-through rates (relative to position) by search query. Applying a non-linear regression fit we can estimate expected CLICK volume based on prior performance and by ingesting and preprocessing historic events via DuckDB Search Console telemetry, deliver an output with prioritised scores and action plans to help content and SEO teams improve performance strategically while using machine data as part of their daily process within an established, secured infrastructure.</p>
+    <p>In order to automate programmatic extraction of an underserved base of digital assets to enable at-scale resolution of organic search inefficiency, we use machine learning to model for search queries and top high volume web pages with underperforming click-through rates based on their position. Using an adapted non-linear regression, we can predict the expected click volume based on historical click through data using data that we extract and transform from historic search console telemetry (via DuckDB). The pipeline produces prioritized opportunity scores for actionable items to allow content and seo teams to systematically fix organic inefficiencies and allow machine telemetry to inform day-to-day operations work flow all within governed and secure controls.</p>
 
     <!-- 2. INTRODUCTION & PROBLEM STATEMENT -->
     <h2>Introduction / Problem Statement</h2>
-    <p>In order to maximize the opportunity which can potentially be seen from our organic traffic, we have need to dive beyond simply aggregate or index level values to seek item level opportunity. In particular, we are looking to answer the following core research question:</p>
+    <p>In order to maximize the opportunity which can potentially be seen from our organic traffic, we have need to dive beyond simply aggregate or index level values to seek item level opportunity. In particular, we are looking to answer the following question:</p>
     <blockquote>
         <em>"Of our highest search volume page or query entities, which entities on these pages/queries perform far less better at our property when clicking than one might predict given the average search position position for this entity and at what ordered level of priority would they most be benefit from a intervention?"</em>
     </blockquote>
     <p>Our search position v click through rate (CTR) distribution clearly demonstrates a precipitous rate of decrease: As shown above after our rank #1 position average 6.67% CTR, after only rank #2 that number significantly drops to 2.38%, after Rank # 5 this drops to 0.44%, and continues to spiral downwards until the furthest out on the page #10 which is a flat 0.31%. A pearson co relation test however showed zero correlation with CTR (-0.0726), implying that a simple linear model does not apply for estimating CTR for a given position number.</p>
 
-    <!-- 3. DATA OVERVIEW -->
-    <h2>Data Overview</h2>
-    <p>We used daily performance log streams ingested securely via DuckDB remote Parquet warehouse connectors:</p>
+    <!-- 3. DATA -->
+    <h2>Data</h2>
     <ul>
-        <li><strong>Source Path:</strong> <code>fact_content_daily_performance</code> (partitioned by March 2026)</li>
-        <li><strong>Data Timespan:</strong> March 1, 2026 through March 31, 2026</li>
-        <li><strong>Total Content Items:</strong> 331,438</li>
-        <li><strong>Data Privacy:</strong> All client identifiers and proprietary URLs have been scrubbed or randomized to maintain public safety and compliance standards.</li>
+        <li><strong>Data Release & Warehouse Source:</strong> Ingested via DuckDB remote Parquet warehouse connectors from the <code>fact_content_daily_performance</code> tables.</li>
+        <li><strong>Date Windows:</strong> Historical performance metrics sampled across monthly partitions (specifically March 2026 data partitions).</li>
+        <li><strong>Sampling & Exclusions:</strong> A 20% random sample was utilized for memory efficiency. Non-active or zero-impression records were excluded to ensure statistical relevance across page-query pairs. Client identifiers and proprietary internal URLs were scrubbed to maintain public safety and compliance standards.</li>
     </ul>
 
     <!-- 4. METHODOLOGY -->
     <h2>Methodology</h2>
-    <p><strong>Assumptions:</strong> User engagement on search engines behaves non-linearly across SERP rankings, and historical impression volumes correlate with potential traffic recovery ceilings.</p>
-    <p><strong>Features:</strong> Primary model inputs include <code>gsc_impressions</code> and <code>gsc_avg_position</code>.</p>
-    <p><strong>Label Definition:</strong> Target variable is <code>gsc_clicks</code>, representing actual observed user engagement.</p>
-    <p><strong>Validation Design:</strong> Implemented a robust <strong>Group-Aware K-Fold Cross-Validation</strong> (<code>GroupKFold</code>) strategy partitioned by client ID to prevent data leakage and evaluate true out-of-sample Generalization Error (MSE).</p>
+    <ul>
+        <li><strong>Assumptions:</strong> User engagement on search engines behaves non-linearly across SERP rankings, and historical impression volumes correlate with potential traffic recovery ceilings.</li>
+        <li><strong>Features:</strong> Primary model inputs include <code>gsc_impressions</code> and <code>gsc_avg_position</code>.</li>
+        <li><strong>Label Definition:</strong> Target variable is <code>gsc_clicks</code>, representing actual observed user engagement.</li>
+        <li><strong>Baseline:</strong> A standard random train-test split configuration prone to target leakage across client groupings.</li>
+        <li><strong>Validation Design:</strong> Employed an effective Group-aware K-Fold Cross-Validation (<code>GroupKFold</code>), splitting the data on the client ID feature to address potential data leakage, and estimate accurate out-of-sample Generalization Error (MSE).</li>
+        <li><strong>Leakage Checks:</strong> Verified that feature distributions and target metrics are isolated across validation folds to guarantee honest generalization metrics.</li>
+    </ul>
 
     <!-- 5. RESULTS -->
     <h2>Results</h2>
     <p>Model validation confirmed that group-aware splitting prevents overfitting compared to naive random splits. When evaluating model predictions against actual clicks, the non-linear regressor successfully isolates impression volatility and traffic anomalies.</p>
 
+    <h3>Table 1: Sample Ranked Action Queue (<code>ranked_action_queue.csv</code>)</h3>
     <table>
         <thead>
             <tr>
@@ -126,12 +130,13 @@
         </tbody>
     </table>
 
+    <h3>GSC Impressions vs. Average Position Analysis</h3>
     <div class="chart-container">
         <img src="work/outputs/impressions_vs_position.png" alt="GSC Impressions vs Average Position by Reason Code">
         <p><em>Figure 1: GSC Impressions vs. Average Search Position categorized by operational reason codes.</em></p>
     </div>
 
-    <!-- 6. LIMITATIONS AND HONEST FRAMING -->
+    <!-- 6. LIMITATIONS & HONEST FRAMING -->
     <h2>Limitations & Honest Framing</h2>
     <ul>
         <li><strong>Seasonality & Search Algorithm Variability:</strong> The "seasoning effect," search ranking algorithm updates, and the natural flux of traffic from search engines can result in unpredictable fluctuations in impressions and clicks, occasionally causing stable assets to look suddenly less well-performing than usual.</li>
@@ -141,19 +146,22 @@
 
     <!-- 7. RANKED RECOMMENDATIONS -->
     <h2>Ranked Recommendations (Action Playbook)</h2>
-    <ol>
+    <ul>
         <li><strong>Immediate Metadata Refresh (<code>TOP_TIER_OPTIMIZE</code>):</strong> Prioritize high-impression pages currently ranking in top positions (1–5) to capture immediate CTR gains via title and meta description tuning.</li>
         <li><strong>Structural Expansion (<code>HIGH_PERCENTAGE_STALE</code>):</strong> Refresh stale content and expand internal linking structures for pages with moderate visibility but lagging positioning.</li>
         <li><strong>Mandatory Editorial Review (<code>COMPLIANCE_FLAG</code>):</strong> Route all pages displaying irregular traffic patterns through human editorial sign-off before executing automated updates.</li>
         <li><strong>Content Archiving (<code>LOW_YIELD_ARCHIVE</code>):</strong> Defer or archive low-yield content pieces that show minimal projected return on optimization effort.</li>
-    </ol>
+    </ul>
 
     <!-- 8. REPRODUCIBILITY -->
     <h2>Reproducibility</h2>
-    <p>Notebooks & Codebase: Accessible via the GitHub repository notebooks (<code>w01_research_question.ipynb</code> through <code>w07_action_playbook.ipynb</code>).</p>
-    <p>Artifacts: Generated action queues and governance schemas are stored in <code>work/outputs/ranked_action_queue.csv</code> and <code>work/outputs/action_playbook_governance.json</code>.</p>
+    <ul>
+        <li><strong>GitHub Repository:</strong> <a href="https://github.com/Thrivi17/Thrivi_Flyrank" target="_blank">https://github.com/Thrivi17/Thrivi_Flyrank</a></li>
+        <li><strong>Notebooks & Codebase:</strong> Accessible via the GitHub repository notebooks (<a href="https://github.com/Thrivi17/Thrivi_Flyrank/tree/main/notebooks" target="_blank">View Notebooks</a>)</li>
+        <li><strong>Artifacts:</strong> Generated action queues and governance schemas are stored in <a href="https://github.com/Thrivi17/Thrivi_Flyrank/tree/main/outputs" target="_blank">Outputs Directory</a> and <a href="https://github.com/Thrivi17/Thrivi_Flyrank/tree/main/figures" target="_blank">Figures Directory</a>.</li>
+    </ul>
 
-    <!-- 9. ACKNOWLEDGMENTS -->
+    <!-- 9. ACKNOWLEDGMENTS & DATA CREDIT -->
     <h2>Acknowledgments & Data Credit</h2>
     <p>Built on the <a href="https://flyrank.ai" target="_blank">FlyRank AI/ML Internship Dataset</a>.</p>
 
