@@ -1,0 +1,19 @@
+{
+    "human_review_rules": [
+        "All content flagged with 'COMPLIANCE_FLAG' must be manually approved by a senior editor.",
+        "Bulk publishing updates exceeding 50 URLs require human verification of internal link graphs."
+    ],
+    "cost_value_framework": {
+        "estimated_human_review_cost_per_item_usd": 15.0,
+        "projected_traffic_value_multiplier": 2.5
+    },
+    "monitoring_retrain_triggers": [
+        "Drift detection alert if feature distribution shifts > 15% week-over-week.",
+        "Automatic model retraining triggered monthly using fresh search console performance logs."
+    ],
+    "strictly_not_to_be_automated": [
+        "Final publication authorization for high-stakes commercial content.",
+        "Ethical compliance checks and brand safety alignment overrides.",
+        "Direct manipulation of core search engine penalty recovery requests."
+    ]
+}
