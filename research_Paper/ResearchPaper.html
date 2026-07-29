@@ -76,11 +76,17 @@
     </div>
 
     <h2>Abstract</h2>
-    <p>In order to automate programmatic extraction of an underserved base of digital assets to enable at-scale resolution of organic search inefficiency, we use machine learning to model for search queries and top high volume web pages with underperforming click-through rates based on their position. Using an adapted non-linear regression, we can predict the expected click volume based on historical click through data using data that we extract and transform from historic search console telemetry (via DuckDB). The pipeline produces prioritized opportunity scores for actionable items to allow content and seo teams to systematically fix organic inefficiencies and allow machine telemetry to inform day-to-day operations work flow all within governed and secure controls.</p>
+    <p>At-scale organic search requires a constant paradigm change away from what was a process of static heuristic ranking towards one that is more agile and predictive toward identifying ranking opportunities. In this work we detail the process developed toward the solution of our central FlyRank content problem which is one of finding valuable high opportunity digital assets and estimating the predicted traffic increase attributable to modelling an asset’s potential search ranking position in conjunction with its resulting click thru’ rate in a non-linear format.</p>
+    
+    <p>Using historically generated search console statistics currently available for AtScale-stored data in a DuckDB installation and utilizing the power of dynamic data pipes delivered to a Random Forest Regressor our procedures create identifies of opportunity and outputs playbooks ready to be integrated into operations, without loss of in-loop human governance.</p>
+    
+    <p>It is our intention that the following sections bridge the gap from Search Stats and SEO action: Our FlyRank study in progress.</p>
 
     <!-- 2. INTRODUCTION & PROBLEM STATEMENT -->
     <h2>Introduction / Problem Statement</h2>
-    <p>In order to maximize the opportunity which can potentially be seen from our organic traffic, we have need to dive beyond simply aggregate or index level values to seek item level opportunity. In particular, we are looking to answer the following question:</p>
+    <p>In modern digital growth, content teams face a persistent bottleneck: determining which digital assets offer the highest return on optimization effort. Traditional SEO approaches rely on generalized heuristics that fail to capture the complex, non-linear dynamics of search engine results pages. This paper serves as a core case study for FlyRank, tackling the operational challenge of automating organic search optimization. By leveraging historical telemetry data and machine learning modeling, we bridge the gap between abstract search analytics and practical growth playbooks, establishing a repeatable framework for asset prioritization and content expansion.</p>
+    
+    <p>In particular, we are looking to answer the following question:</p>
     <blockquote>
         <em>"Of our highest search volume page or query entities, which entities on these pages/queries perform far less better at our property when clicking than one might predict given the average search position position for this entity and at what ordered level of priority would they most be benefit from a intervention?"</em>
     </blockquote>
